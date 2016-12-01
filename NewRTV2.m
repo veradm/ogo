@@ -27,11 +27,15 @@ acoeff=0.0576; % attenuation for pressure, per cm, for gel
 alpha=acoeff;
 
 omega=2*pi*fr;
-k=omega/c; % unit: m^-1 , wavenumber for gel
+k_gel=omega/c; % unit: m^-1 , wavenumber for gel
 radius=0.35; % transducer diameter =7 mm, radius=3.5 mm=0.35 cm
 FocalLength=14; % cm
 Area=pi*radius^2; % area of transducer
-ka=k*radius; %ka for gel
+ka_gel=k_gel*radius; %ka for gel
+
+c_oil=1380*100;
+k_oil=omega/c_oil;
+ka_oil=k_oil*radius;
 
 % first 3 zeros of besselj(1,x)=J1(x):
 r1=3.8317;
@@ -39,7 +43,7 @@ r2=7.0156;
 r3=10.1735;
 
 % SELECT LOBES TO INCLUDE:
-sin_theta_max=r1/(ka*4); % smaller, only for shape of focal point
+sin_theta_max=r1/(ka_oil*4); % smaller, only for shape of focal point
 theta_max=asin(sin_theta_max);
 cos_theta_max=sqrt(1-sin_theta_max^2);
 AA=1-cos_theta_max;
@@ -51,7 +55,7 @@ fprintf('bundle diameter at 14 cm =%7.3f cm\n',2*14*sin_theta_max);
 % We need this when we scale the power
 % produced at the end
 
-f=@(theta) sin(theta).*(2*besselj(1,ka*sin(theta))./(ka*sin(theta))).^2;
+f=@(theta) sin(theta).*(2*besselj(1,ka_oil*sin(theta))./(ka_oil*sin(theta))).^2;
 IntTot=quad(f,0.00000001,pi/2); % integral over theta from 0 to pi/2
 IntRestr=quad(f,0.00000001,theta_max);
 powerfr=IntRestr/IntTot;
@@ -59,17 +63,17 @@ fprintf('fraction of total power within theta_max %6.4f \n',powerfr);
 
 I_init     = 1; % DO NOT CHANGE !!!
 Ptot=0;
-Nrays=1; % nr of rays PER transducer element.First work with one, then with 30000
+Nrays=30000; % nr of rays PER transducer element.First work with one, then with 30000
 
 %==========================================================================
 % Definition of the table region. Each point is the centre of a cube
 %==========================================================================
-xmin =  -1;  % startpoint(1)+ FocalLength-2;  % cm
-xmax =  1; % startpoint(1)+ FocalLength+2;  % cm
+xmin =-1; % startpoint(1)+ FocalLength-2;  % cm
+xmax = 1; % startpoint(1)+ FocalLength+2;  % cm
 ymin=-0.5; %-2; % cm
-ymax=0.5;  % cm
+ymax= 0.5; % cm
 zmin=-0.5; % cm
-zmax=0.5;  % cm
+zmax= 0.5; % cm
 % ASSUMPTION: xmin<xmax, ymin<ymax, zmin<zmax
 Nx=101; % nr of steps in x direction
 Ny=51;
@@ -124,6 +128,8 @@ for trd = 1:Ntrd % loop over all transducer elements
     v2norm=v2/norm(v2); % normalised v2
     v3=cross(v2norm,normal); % another vector in the plane of the transd
     
+    %initialize structure.
+    ray_gel=struct('start',[],'I0',0,'phase',0,'material',0,'Vray',[],'end',[]) ;
     
     scatter3(startpoint(1),startpoint(2),startpoint(3), 40, 'red', 'filled');
     hold on;
@@ -146,10 +152,17 @@ for trd = 1:Ntrd % loop over all transducer elements
         %  other angle (azimuth)
         phi=2*pi*rand(1);
         Rtheta=tan(theta);
+        
+        [ray_gel]=Update_rays(theta,phi,startpoint,I_init,k_oil,normal,v2norm,v3,ka_oil);
+       
         Vray=normal+Rtheta*(cos(phi)*v2norm+sin(phi)*v3);
         Vray=Vray/norm(Vray);
+        
+        Vray_gel=ray_gel.Vray/norm(ray_gel.Vray);
+        startpoint_gel=ray_gel.start;
+        
         % ray with init in startpoint and direction Vray (=normalized)
-        B=ka*sin(theta);
+        B=ka_oil*sin(theta);
         if B==0
             Scaling=1;
         else
@@ -177,27 +190,27 @@ for trd = 1:Ntrd % loop over all transducer elements
         % Generate lambda_x, the series of lambdas such that
         % startpoint+lambda_x*Vray crosses a x-boundary between two cubes
         
-        if  startpoint(1)<xmin
-            if Vray(1)>0
-                lambda_x=(xxb-startpoint(1))/Vray(1); % all positive elements
+        if  startpoint_gel(1)<xmin
+            if Vray_gel(1)>0
+                lambda_x=(xxb-startpoint_gel(1))/Vray_gel(1); % all positive elements
             else % Vray(1)<=0, ray cannot reach table region
                 lambda_x=inf;
             end
-        elseif startpoint(1)>xmax
-            if Vray(1)<0
-                lambda_x=(xxb-startpoint(1))/Vray(1);
+        elseif startpoint_gel(1)>xmax
+            if Vray_gel(1)<0
+                lambda_x=(xxb-startpoint_gel(1))/Vray_gel(1);
                 % all positive elements, BUT: decreasing sequence
                 lambda_x=lambda_x(end:-1:1); % reverse
             else % Vray(1)>=0, ray cannot reach table region
                 lambda_x=inf;
             end
         else % xmin<= startpoint(1)<= xmax, start inside table region
-            if Vray(1)>0
-                lambda_x=(xxb-startpoint(1))/Vray(1); % may contain pos and neg values
+            if Vray_gel(1)>0
+                lambda_x=(xxb-startpoint_gel(1))/Vray_gel(1); % may contain pos and neg values
                 lambda_x=lambda_x(lambda_x>=0); % no neg values
                 lambda_x=[0,lambda_x]; % add lambda=0, doubles will be removed later on
-            elseif Vray(1)<0
-                lambda_x=(xxb-startpoint(1))/Vray(1); % may contain pos and neg values
+            elseif Vray_gel(1)<0
+                lambda_x=(xxb-startpoint_gel(1))/Vray_gel(1); % may contain pos and neg values
                 lambda_x=lambda_x(lambda_x>=0); % no neg values, BUT decreasing sequence
                 lambda_x=lambda_x(end:-1:1); % reverse
                 lambda_x=[0,lambda_x]; % add lambda=0, doubles will be removed later
@@ -209,27 +222,27 @@ for trd = 1:Ntrd % loop over all transducer elements
         if lambda_x(1)<inf % ray may pass through table region
             % Generate lambda_y, the series of lambdas such that
             % startpoint+lambda_y*Vray crosses a y-boundary between two cubes
-            if  startpoint(2)<ymin
-                if Vray(2)>0
-                    lambda_y=(yyb-startpoint(2))/Vray(2); % all positive elements
+            if  startpoint_gel(2)<ymin
+                if Vray_gel(2)>0
+                    lambda_y=(yyb-startpoint_gel(2))/Vray_gel(2); % all positive elements
                 else % Vray(2)<=0, ray cannot reach table region
                     lambda_y=inf;
                 end
-            elseif startpoint(2)>ymax
-                if Vray(2)<0
-                    lambda_y=(yyb-startpoint(2))/Vray(2);
+            elseif startpoint_gel(2)>ymax
+                if Vray_gel(2)<0
+                    lambda_y=(yyb-startpoint_gel(2))/Vray_gel(2);
                     % all positive elements, BUT decreasing sequence
                     lambda_y=lambda_y(end:-1:1); %reverse
                 else % Vray(2)>=0, ray cannot reach table region
                     lambda_y=inf;
                 end
             else % ymin<= startpoint(2)<= ymax, start inside table region
-                if Vray(2)>0
-                    lambda_y=(yyb-startpoint(2))/Vray(2); % may contain pos and neg values
+                if Vray_gel(2)>0
+                    lambda_y=(yyb-startpoint_gel(2))/Vray_gel(2); % may contain pos and neg values
                     lambda_y=lambda_y(lambda_y>=0); % no neg values
                     lambda_y=[0,lambda_y]; % add lambda=0, doubles will be removed later on
-                elseif Vray(2)<0
-                    lambda_y=(yyb-startpoint(2))/Vray(2); % may contain pos and neg values
+                elseif Vray_gel(2)<0
+                    lambda_y=(yyb-startpoint_gel(2))/Vray_gel(2); % may contain pos and neg values
                     lambda_y=lambda_y(lambda_y>=0); % no neg values, BUT decreasing sequence
                     lambda_y=lambda_y(end:-1:1); % reverse
                     lambda_y=[0,lambda_y];% add lambda=0, doubles will be removed later
@@ -244,27 +257,27 @@ for trd = 1:Ntrd % loop over all transducer elements
         if lambda_x(1)<inf && lambda_y(1)<inf % ray may pass through table region
             % Generate lambda_z, the seies of lambdas such that
             % startpoint+lambda_z*Vray crosses a z-boundary between two cubes
-            if  startpoint(3)<zmin
-                if Vray(3)>0
-                    lambda_z=(zzb-startpoint(3))/Vray(3); % all positive elements
+            if  startpoint_gel(3)<zmin
+                if Vray_gel(3)>0
+                    lambda_z=(zzb-startpoint_gel(3))/Vray_gel(3); % all positive elements
                 else % Vray(3)<=0, ray cannot reach table region
                     lambda_z=inf;
                 end
-            elseif startpoint(3)>zmax
-                if Vray(3)<0
-                    lambda_z=(zzb-startpoint(3))/Vray(3);
+            elseif startpoint_gel(3)>zmax
+                if Vray_gel(3)<0
+                    lambda_z=(zzb-startpoint_gel(3))/Vray_gel(3);
                     % all positive elements, BUT decreasing sequence
                     lambda_z=lambda_z(end:-1:1); % reverse
                 else % Vray(2)>=0, ray cannot reach table region
                     lambda_z=inf;
                 end
             else % zmin<= startpoint(3)<= zmax, start inside table region
-                if Vray(3)>0
-                    lambda_z=(zzb-startpoint(3))/Vray(3); % may contain pos and neg values
+                if Vray_gel(3)>0
+                    lambda_z=(zzb-startpoint_gel(3))/Vray_gel(3); % may contain pos and neg values
                     lambda_z=lambda_z(lambda_z>=0); % no neg values
                     lambda_z=[0,lambda_z]; % add lambda=0, doubles will be removed later on
                 elseif Vray(3)<0
-                    lambda_z=(zzb-startpoint(3))/Vray(3); % may contain pos and neg values
+                    lambda_z=(zzb-startpoint_gel(3))/Vray_gel(3); % may contain pos and neg values
                     lambda_z=lambda_z(lambda_z>=0); % no neg values, BUT decreasing sequence
                     lambda_z=lambda_z(end:-1:1); % reverse
                     lambda_z=[0,lambda_z]; %add lambda=0, doubles will be removed later
@@ -288,12 +301,13 @@ for trd = 1:Ntrd % loop over all transducer elements
         
         if Min_lambda<Max_lambda %ray passes through table region
             Nrayshit=Nrayshit+1;
-            P_in=startpoint+Min_lambda*Vray;
-            P_out=startpoint+Max_lambda*Vray;
+            P_in=startpoint_gel+Min_lambda*Vray_gel;
+            P_out=startpoint_gel+Max_lambda*Vray_gel;
             
             if rand<plotfraction % plot only a part of the rays
                 % plot in green the part from startpoint to boundary with table region:
-                plot3([startpoint(1),P_in(1)],[startpoint(2),P_in(2)],[startpoint(3),P_in(3)],'-g');
+                plot3([startpoint_gel(1),P_in(1)],[startpoint_gel(2),P_in(2)],[startpoint_gel(3),P_in(3)],'-r');
+                plot3([startpoint(1),startpoint_gel(1)],[startpoint(2),startpoint_gel(2)],[startpoint(3),startpoint_gel(3)],'-g');
                 % plot in blue the part in table region:
                 plot3([P_in(1),P_out(1)],[P_in(2),P_out(2)],[P_in(3),P_out(3)],'-b');
             end;
@@ -310,7 +324,7 @@ for trd = 1:Ntrd % loop over all transducer elements
                 lambda_1= lambda_interesting(n);
                 lambda_2= lambda_interesting(n+1);
                 lambda_12=(lambda_1+lambda_2)/2;
-                ind=floor((startpoint+lambda_12*Vray-[xmin;ymin;zmin])./[dx;dy;dz])+1;
+                ind=floor((startpoint_gel+lambda_12*Vray_gel-[xmin;ymin;zmin])./[dx;dy;dz])+1;
                 %==================================================================
                 % at this point we found all my lambda_1, lambda_2 and lambda_12
                 %==================================================================
@@ -331,7 +345,7 @@ for trd = 1:Ntrd % loop over all transducer elements
                 %==================================================================
                 PowerLossOneEl(ind(1),ind(2),ind(3))=PowerLossOneEl(ind(1),ind(2),ind(3))+ ...
                     I0*(exp(-2*alpha*lambda_1)-exp(-2*alpha*lambda_2));
-                PhaseOneEl(ind(1),ind(2),ind(3))=PhaseOneEl(ind(1),ind(2),ind(3))+k*lambda_12;
+                PhaseOneEl(ind(1),ind(2),ind(3))=PhaseOneEl(ind(1),ind(2),ind(3))+k_gel*lambda_12+ray_gel.phase;
                 NraysOneEl(ind(1),ind(2),ind(3))=NraysOneEl(ind(1),ind(2),ind(3))+1;
                 % take care: PowerLoss must be divided by dx*dy*dz to obtain power density
                 % in watt/cm^3
@@ -409,14 +423,3 @@ xlabel('y (cm)');
 ylabel('z (cm)');
 st3=['heat production at x=',num2str(x1),' in watt/cm^3'];
 title(st3);
-
-
-
-
-
-
-
-
-
-
-
