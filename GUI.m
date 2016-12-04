@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 01-Dec-2016 19:42:03
+% Last Modified by GUIDE v2.5 04-Dec-2016 12:24:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -75,15 +75,15 @@ varargout{1} = handles.output;
 
 
 
-
 % --- Executes on slider movement.
 function slider1_Callback(hObject, eventdata, handles)
 % hObject    handle to slider1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-sliderHandle = handles.slider1.Value;
-sliderValue=num2str(get(sliderHandle,'Value'))
-set(editHandle,'String',sliderValue)
+
+sliderval = handles.slider1.Value
+set(handles.edit6,'String',sliderval)
+
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -174,9 +174,9 @@ function edit6_Callback(editHandle, hObject, eventdata, handles)
 % hObject    handle to edit6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-editHandle = handles.edit6.Value;
-textValue = str2num(get(handles,'String'));
-set(sliderHandle,'Value',textValue);
+editval=str2double(get(hObject,'String'))
+set(handles.slider1,'Value',editval);
+
 % Hints: get(hObject,'String') returns contents of edit6 as text
 %        str2double(get(hObject,'String')) returns contents of edit6 as a double
 
@@ -200,3 +200,36 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 close(gcf);
+
+
+% --- Executes on selection change in popupmenu2.
+function popupmenu2_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+str = get(hObject, 'String');
+val = get(hObject, 'Value');
+switch str{val};
+    case '100 watt'
+        Power = 100;
+    case '150 watt'
+        Power = 150;
+    case '200 watt'
+        Power = 200;
+end
+handles.Power = Power;
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu2 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu2
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
