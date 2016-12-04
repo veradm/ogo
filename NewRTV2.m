@@ -308,6 +308,9 @@ for trd = 1:Ntrd % loop over all transducer elements
                 % plot in green the part from startpoint to boundary with table region:
                 plot3([startpoint_gel(1),P_in(1)],[startpoint_gel(2),P_in(2)],[startpoint_gel(3),P_in(3)],'-r');
                 plot3([startpoint(1),startpoint_gel(1)],[startpoint(2),startpoint_gel(2)],[startpoint(3),startpoint_gel(3)],'-g');
+                
+                p=patch([-6 -6 -6 -6], [8 8 -8 -8], [-8 8 8 -8],'black');
+                set(p,'facealpha',0.5);
                 % plot in blue the part in table region:
                 plot3([P_in(1),P_out(1)],[P_in(2),P_out(2)],[P_in(3),P_out(3)],'-b');
             end;
