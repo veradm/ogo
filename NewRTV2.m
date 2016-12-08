@@ -63,18 +63,19 @@ fprintf('fraction of total power within theta_max %6.4f \n',powerfr);
 
 I_init     = 1; % DO NOT CHANGE !!!
 Ptot=0;
-Nrays=30000; % nr of rays PER transducer element.First work with one, then with 30000
-
+%Nrays=1 % nr of rays PER transducer element.First work with one, then with 30000
 %==========================================================================
 % Definition of the table region. Each point is the centre of a cube
 %==========================================================================
-xmin =-1; % startpoint(1)+ FocalLength-2;  % cm
-xmax = 1; % startpoint(1)+ FocalLength+2;  % cm
+xmin =-2; %startpoint(1)+ FocalLength-2;  % cm
+xmax = 2; %startpoint(1)+ FocalLength+2;  % cm
 ymin=-0.5; %-2; % cm
 ymax= 0.5; % cm
 zmin=-0.5; % cm
 zmax= 0.5; % cm
 % ASSUMPTION: xmin<xmax, ymin<ymax, zmin<zmax
+for Nrays=[1000,30000];
+    
 Nx=101; % nr of steps in x direction
 Ny=51;
 Nz=51;
@@ -308,10 +309,9 @@ for trd = 1:Ntrd % loop over all transducer elements
                 % plot in green the part from startpoint to boundary with table region:
                 plot3([startpoint_gel(1),P_in(1)],[startpoint_gel(2),P_in(2)],[startpoint_gel(3),P_in(3)],'-r');
                 plot3([startpoint(1),startpoint_gel(1)],[startpoint(2),startpoint_gel(2)],[startpoint(3),startpoint_gel(3)],'-g');
-                
+                % plot in blue the part in table region:
                 p=patch([-6 -6 -6 -6], [8 8 -8 -8], [-8 8 8 -8],'black');
                 set(p,'facealpha',0.5);
-                % plot in blue the part in table region:
                 plot3([P_in(1),P_out(1)],[P_in(2),P_out(2)],[P_in(3),P_out(3)],'-b');
             end;
             
@@ -361,9 +361,9 @@ for trd = 1:Ntrd % loop over all transducer elements
     Ptot=Ptot+Ptrd;
     NraysOneEl=max(NraysOneEl,1); % to avoid division by 0 if no ray passes through the cube
     PhaseOneEl=PhaseOneEl./NraysOneEl; % compute average phase from all rays that pass through this cube
-    Pressure= Pressure +sqrt(PowerLossOneEl).*exp(i*PhaseOneEl); 
-    
+    Pressure= Pressure +sqrt(PowerLossOneEl).*exp(i*PhaseOneEl);  
 end; % loop over the transducer elements
+
 
 
 PowerLoss=abs(Pressure.^2);
@@ -396,9 +396,18 @@ MaxP=max(max(max(PowerLoss)));
 fprintf('max heat prod %7.3f  watt/cm^3\n', MaxP);
 
 %==========================================================================
+if Nrays<30000;
+    [rx,cy,vz]=ind2sub(size(PowerLoss),find(PowerLoss==MaxP))
+    xmid=xmin+(0.5+cy)*dx;
+    xmin=xmid-1
+    xmax=xmid+1
+end
+fprintf('first initial gues loop complete, starting the accurate loop now')
+end; % loop over different NRays
+
+%==========================================================================
 % Visualization!
 %==========================================================================
-
 % plot for fixed z=z0 lateral plane
 z0=0;
 [zmin,iz]=min(abs(zz-z0));
@@ -426,3 +435,4 @@ xlabel('y (cm)');
 ylabel('z (cm)');
 st3=['heat production at x=',num2str(x1),' in watt/cm^3'];
 title(st3);
+
