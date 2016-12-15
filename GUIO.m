@@ -102,15 +102,9 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-s.c=get(handles.speed,'Value');
-s.density=get(handles.density,'Value');
-s.acoeff=get(handles.attenuation,'Value');
-s.distance=get(handles.cmbetween,'Value');
-s.nrays=get(handles.nrrays,'Value');
-s.frequency=get(handles.frequency,'Value');
-output=s;
-assignin('base','output',output)
-%close(gcf)
+
+
+close(gcf)
 
 
 
@@ -131,7 +125,7 @@ switch strChoice;
     case '200 Watt'
         Power = 200;
 end
-assignin('base','power',Power)
+assignin('base','RequiredTotalPower',Power)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns Initialpower contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from Initialpower
@@ -155,6 +149,9 @@ function frequency_Callback(hObject, eventdata, handles)
 % hObject    handle to frequency (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+fr=str2num(get(hObject,'String'));
+set(handles.frequency,'Value',fr)
+assignin ('base','fr',fr);
 
 % Hints: get(hObject,'String') returns contents of frequency as text
 %        str2double(get(hObject,'String')) returns contents of frequency as a double
@@ -178,6 +175,9 @@ function nrrays_Callback(hObject, eventdata, handles)
 % hObject    handle to nrrays (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+Nrays=str2num(get(hObject,'String'));
+set(handles.nrrays,'Value',Nrays)
+assignin ('base','Nrays',Nrays);
 
 % Hints: get(hObject,'String') returns contents of nrrays as text
 %        str2double(get(hObject,'String')) returns contents of nrrays as a double
@@ -230,6 +230,7 @@ function speed_Callback(hObject, eventdata, handles)
 c=str2double(get(hObject,'String'));
 set(handles.speed,'Value',c)
 s.c=get(handles.speed,'Value');
+assignin('base','c',c)
 
 % Hints: get(hObject,'String') returns contents of speed as text
 %        str2double(get(hObject,'String')) returns contents of speed as a double
@@ -253,9 +254,9 @@ function density_Callback(hObject, eventdata, handles)
 % hObject    handle to density (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-density=str2double(get(hObject,'String'));
-set(handles.density,'Value',density);
-s.density=get(handles.density,'Value');
+density=str2num(get(hObject,'String'));
+set(handles.density,'Value',density)
+assignin ('base','density',density);
 
 % Hints: get(hObject,'String') returns contents of density as text
 %        str2double(get(hObject,'String')) returns contents of density as a double
@@ -302,21 +303,9 @@ function attenuation_Callback(hObject, eventdata, handles)
 % hObject    handle to attenuation (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-acoeff=str2double(get(hObject,'String'));
-if acoeff<=0
-    mode=struct('WindowStyle','nonmodal',...
-        'Interpreter','tex');
-    h=errordlg('Too small value',...
-        'Value Error',mode);
-end
-if acoeff>=10
-    mode=struct('WindowStyle','nonmodal',...
-        'Interpreter','tex');
-    h=errordlg('Too big value',...
-        'Value Error',mode);
-end 
-set(handles.attenuation,'Value',acoeff);
-s.acoeff=get(handles.attenuation,'Value');
+acoeff=str2num(get(hObject,'String'));
+set(handles.attenuation,'Value',acoeff)
+assignin ('base','acoeff',acoeff);
 
 % Hints: get(hObject,'String') returns contents of attenuation as text
 %        str2double(get(hObject,'String')) returns contents of attenuation as a double
@@ -363,10 +352,9 @@ function cmbetween_Callback(hObject, eventdata, handles)
 % hObject    handle to cmbetween (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-editval=str2double(get(hObject,'String'));
-set(handles.slider1,'Value',editval)
-set(handles.cmbetween,'Value',editval)
-s.distance=get(handles.cmbetween,'Value');
+Focusd=str2num(get(hObject,'String'));
+set(handles.cmbetween,'Value',Focusd)
+assignin ('base','Focusd',Focusd);
 % Hints: get(hObject,'String') returns contents of cmbetween as text
 %        str2double(get(hObject,'String')) returns contents of cmbetween as a double
 
