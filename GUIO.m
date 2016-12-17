@@ -86,14 +86,14 @@ function varargout = GUIO_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 
-%s.c=get(handles.speed,'Value');
-%s.density=get(handles.density,'Value');
-%s.acoeff=get(handles.attenuation,'Value');
-%s.distance=get(handles.cmbetween,'Value');
-%s.nrays=get(handles.nrrays,'Value');
-%s.frequency=get(handles.frequency,'Value');
+s.c=get(handles.speed,'Value');
+s.density=get(handles.density,'Value');
+s.acoeff=get(handles.attenuation,'Value');
+s.distance=get(handles.cmbetween,'Value');
+s.nrays=get(handles.nrrays,'Value');
+s.frequency=get(handles.frequency,'Value');
 
-%varargout{1} = s;
+varargout{1} = s;
 uiwait
 
 %uiwait(handles.figure1)
@@ -104,8 +104,22 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+s.c=get(handles.speed,'Value');
+s.density=get(handles.density,'Value');
+s.acoeff=get(handles.attenuation,'Value');
+s.distance=get(handles.cmbetween,'Value');
+s.nrays=get(handles.nrrays,'Value');
+s.frequency=get(handles.frequency,'Value');
+output=s;
+assignin('base','output',output)
+
+
 screencapture(0, 'Position', [150 -100 1740 901],'img.jpg')
 close(gcf)
+figure('Position',[50 0 1383 737],'Name','Parameter values','NumberTitle','off');
+C = imread('img.jpg');
+image(C)
+
 
 % --- Executes on selection change in Initialpower.
 function Initialpower_Callback(hObject, eventdata, handles)
